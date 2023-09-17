@@ -50,7 +50,6 @@ def tokenize(expression: str) -> list:
             token_array.append(alternative_tokens[current_token])
             current_token = ""
 
-    print(current_token)
     if len(current_token) > 0:
         raise Exception("Invalid Expression")
     return token_array
@@ -65,7 +64,25 @@ def check_if_expression_is_legal(expression_tokenized: list) -> bool:
     Output: the boolean value of the correctness of the expression
             (true if legal otherwise false)
     """
-    return True
+    stack = 0
+    current_state = 0
+    for i in expression_tokenized:
+        if i == "(" and current_state in [0, 2]:
+            stack += 1
+        elif i == "not" and current_state in [0, 2]:
+            continue
+        elif i in ["true", "false"] and current_state == 0:
+            current_state = 1
+        elif i in ["true", "false"] and current_state == 2:
+            current_state = 1
+        elif i in operators and current_state == 1:
+            current_state = 2
+        elif i == ")" and current_state == 1:
+            stack -= 1
+        else:
+            return False
+
+    return current_state == 1 and stack == 0
 
 
 def simplify_expression_parts(expression_tokenized: list) -> list:
@@ -248,14 +265,19 @@ def evaluate(expression: str) -> bool:
     Input: an expression as a String
     Output: the truth value
     """
-    return evaluate_expression_in_RPN(
-        shunting_yard(simplify_expression_parts(tokenize(expression)))
-    )
+    tokenized_expression = tokenize(expression)
+
+    if not check_if_expression_is_legal(tokenized_expression):
+        raise Exception("Invalid expression")
+    else:
+        return evaluate_expression_in_RPN(
+            shunting_yard(simplify_expression_parts(tokenized_expression))
+        )
 
 
 if __name__ == "__main__":
     logical_expression: str = input(
-        "Input a logical expression, the program will decide if the expression is true"
+        "Input a logical expression, the program will decide if the expression is true "
         + "or false: "
     )
     print(f"provided expression is {evaluate(logical_expression)}")
