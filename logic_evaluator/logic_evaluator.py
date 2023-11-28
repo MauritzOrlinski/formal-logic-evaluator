@@ -1,6 +1,10 @@
-logical_tokens: list = ["not", "or", "and", "true", "false", "(", ")", "=>", "<=>"]
-operators: list = ["and", "or", "=>", "<=>"]
-operators_precedence: dict = {"and": 2, "or": 3, "=>": 4, "<=>": 5}
+from logic_evaluator.variable import variable
+from logic_evaluator.logical_operators import AND, OR, XOR, SYNEQ, IMP
+
+
+logical_tokens: list = ["not", "or", "and", "true", "false", "(", ")", "=>", "<=>", "xor"]
+operators: list = ["and", "or", "=>", "<=>", "xor"]
+operators_precedence: dict = {"and": 2, "xor": 4, "or": 3, "=>": 5, "<=>": 6}
 alternative_tokens: dict = {
     "^": "and",
     "&": "and",
@@ -15,6 +19,8 @@ alternative_tokens: dict = {
     "1": "true",
     "0": "false",
     "f": "false",
+    "+": "or",
+    "*": "and"
 }
 
 
@@ -27,35 +33,57 @@ def tokenize(expression: str) -> list:
     Output: The expression as a list of interpretable tokens
     """
     expression = expression.lower()
-    token_array: list[str] = []
-    expression = expression.replace(" ", "")
+    token_array: list = []
     current_token = ""
-    for index, i in enumerate(list(expression)):
-        current_token += i
-        if current_token in logical_tokens and current_token != "":
-            token_array.append(current_token)
-            current_token = ""
-        elif current_token in alternative_tokens and current_token != "":
-            if current_token == "t" or current_token == "f":
-                if (
-                    len(expression) >= index + 4
-                    and "true" == expression[index : index + 4]
-                ):
-                    continue
-                elif (
-                    len(expression) >= index + 5
-                    and "false" == expression[index : index + 5]
-                ):
-                    continue
-            token_array.append(alternative_tokens[current_token])
-            current_token = ""
+    expression = expression.replace("(", " ( ")
+    expression = expression.replace(")", " ) ")
+    expression = expression.replace(" ", "  ")
+    for index, i in enumerate(expression.split(" ")):
+        if i == "":
+            continue
+        if i in logical_tokens:
+            token_array.append(i)
+        elif i in alternative_tokens:
+            token_array.append(alternative_tokens.get(i))
+        else:
+            token_array.append(variable(i))
 
     if len(current_token) > 0:
-        raise Exception("Invalid Expression")
+        token_array.append(variable(current_token))
     return token_array
 
 
 def check_if_expression_is_legal(expression_tokenized: list) -> bool:
+    """
+    ___________________________________________________________________________
+    Check if the expression is a legal expression of formal logic by using a PDA
+    ___________________________________________________________________________
+    Input: a list of tokens
+    Output: the boolean value of the correctness of the expression
+            (true if legal otherwise false)
+    """
+    stack = 0
+    current_state = 0
+    for i in expression_tokenized:
+        if i == "(" and current_state in [0, 2]:
+            stack += 1
+        elif i == "not" and current_state in [0, 2]:
+            continue
+        elif i in ["true", "false"] or isinstance(i, variable) and current_state == 0:
+            current_state = 1
+        elif i in ["true", "false"] or isinstance(i, variable) and current_state == 2:
+            current_state = 1
+        elif i in operators and current_state == 1:
+            current_state = 2
+        elif i == ")" and current_state == 1:
+            stack -= 1
+        else:
+            return False
+
+    return current_state == 1 and stack == 0
+
+
+def check_if_expression_is_legal_without_tokens(expression_tokenized: list) -> bool:
     """
     ___________________________________________________________________________
     Check if the expression is a legal expression of formal logic by using a PDA
@@ -111,14 +139,15 @@ def simplify_expression_parts(expression_tokenized: list) -> list:
             temp = expression_tokenized[i + 1]
             del expression_tokenized[i]
             del expression_tokenized[i]
-            expression_tokenized.insert(i, temp)
+            expression_tokenized.insert(i, "false" if temp == "true" else "true")
+
             i += 1
+
         elif expression_tokenized[i] == "not" and expression_tokenized[i + 1] == "not":
             del expression_tokenized[i]
             del expression_tokenized[i]
 
         i += 1
-
     return expression_tokenized
 
 
@@ -177,51 +206,6 @@ def shunting_yard(expression: list) -> list:
     return output_queue
 
 
-def AND(first_argument: bool, second_argument: bool) -> bool:
-    """
-    ___________________________________________________________________________
-    The implementation of the and operator
-    ___________________________________________________________________________
-    Input: two boolean values A and B
-    Output: A and B
-    """
-    return first_argument and second_argument
-
-
-def OR(first_argument: bool, second_argument: bool) -> bool:
-    """
-    ___________________________________________________________________________
-    The implementation of the or operator
-    ___________________________________________________________________________
-    Input: two boolean values A and B
-    Output: A or B
-    """
-    return first_argument or second_argument
-
-
-def IMP(first_argument: bool, second_argument: bool) -> bool:
-    """
-    ___________________________________________________________________________
-    The implementation of the if ... then ... operator
-    ___________________________________________________________________________
-    Input: two boolean values A and B
-    Output: if A then B
-    """
-    return first_argument == second_argument or second_argument
-
-
-def SYNEQ(first_argument: bool, second_argument: bool) -> bool:
-    """
-    ___________________________________________________________________________
-    The implementation of the if and only if operator
-    ___________________________________________________________________________
-    Input: two boolean values A and B
-    Output: A iff B
-    """
-
-    return first_argument == second_argument
-
-
 def evaluate_expression_in_RPN(expression_in_RPN: list) -> bool:
     """
     ___________________________________________________________________________
@@ -249,6 +233,8 @@ def evaluate_expression_in_RPN(expression_in_RPN: list) -> bool:
                 solution_stack.append(IMP(temp2, temp1))
             elif i == "<=>":
                 solution_stack.append(SYNEQ(temp1, temp2))
+            elif i == "xor":
+                solution_stack.append(XOR(temp1, temp2))
         elif i == "not":
             solution_stack[-1] = not solution_stack[-1]
 
@@ -273,11 +259,3 @@ def evaluate(expression: str) -> bool:
         return evaluate_expression_in_RPN(
             shunting_yard(simplify_expression_parts(tokenized_expression))
         )
-
-
-if __name__ == "__main__":
-    logical_expression: str = input(
-        "Input a logical expression, the program will decide if the expression is true "
-        + "or false: "
-    )
-    print(f"provided expression is {evaluate(logical_expression)}")
