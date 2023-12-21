@@ -1,4 +1,4 @@
-from logic_evaluator.variable import variable
+from logic_evaluator.variable import Variable
 from logic_evaluator.logical_operators import AND, OR, XOR, SYNEQ, IMP
 
 
@@ -46,10 +46,10 @@ def tokenize(expression: str) -> list:
         elif i in alternative_tokens:
             token_array.append(alternative_tokens.get(i))
         else:
-            token_array.append(variable(i))
+            token_array.append(Variable(i))
 
     if len(current_token) > 0:
-        token_array.append(variable(current_token))
+        token_array.append(Variable(current_token))
     return token_array
 
 
@@ -69,9 +69,9 @@ def check_if_expression_is_legal(expression_tokenized: list) -> bool:
             stack += 1
         elif i == "not" and current_state in [0, 2]:
             continue
-        elif i in ["true", "false"] or isinstance(i, variable) and current_state == 0:
+        elif i in ["true", "false"] or isinstance(i, Variable) and current_state == 0:
             current_state = 1
-        elif i in ["true", "false"] or isinstance(i, variable) and current_state == 2:
+        elif i in ["true", "false"] or isinstance(i, Variable) and current_state == 2:
             current_state = 1
         elif i in operators and current_state == 1:
             current_state = 2

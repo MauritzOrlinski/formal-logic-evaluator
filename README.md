@@ -6,7 +6,7 @@ This is a small formal logic evaluator, which I wrote for fun during an introduc
 This program can interpret simple expressions of formal logic and evaluates the truth value for you. 
 
 # Installation
-Just download logic_parser.py and have a fitting Python version on your PC. No other modules are needed.
+Just download logic_parser.py and have a fitting Python version on your PC. No other modules are needed (this is supposed to stay so in future).
 All code was written and tested in version ```Python 3.8.10``` and will definitely not work in some older versions because of the type annotations.
 
 # Usage
@@ -39,7 +39,7 @@ I currently accept only propositional logic without any variables, which implies
 but not something like:
 ``` A or (B and C => D) <=> E  ```
 
-**uppercase and lowercase are treated equaly (not case sensitive)*'
+**uppercase and lowercase are treated equally (not case-sensitive)*'
 
 ## Currently supported values
 The only supported values for the logical expressions:
@@ -77,6 +77,13 @@ Follow these steps to contribute to the project:
 3. Set up a PR
 4. Then wait until I or maybe others check and review the changes (this could take a while) 
 
+## Read before contributing
+Some things for writing code:
+- this project is supposed to not need anything else then bare-bone python. So don't use any other packages. 
+- Instead of writing large commands in code make your code readable by using descriptive naming, separation by using functions and not using hard to read shortings, oneliners and other "tricks"
+- Describe what functions do by using Docstrings, take a look at the ```logic-evaluator.py```  file for example.
+
+I'm open for new additions and changes to these standards, you can propose them by writing an issue. 
 
 # License
 All code is licensed under the MIT license; please read the ![LICENSE file](LICENSE) for more information.

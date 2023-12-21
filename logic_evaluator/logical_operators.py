@@ -39,7 +39,6 @@ def SYNEQ(first_argument: bool, second_argument: bool) -> bool:
     Input: two boolean values A and B
     Output: A iff B
     """
-
     return first_argument == second_argument
 
 def XOR(first_argument: bool, second_argument: bool) -> bool:
